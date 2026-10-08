@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  # =========================================================================
+  # 1. DATA DELULU CLOUD CONTROL PLANE
+  # =========================================================================
+  control-plane:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8501:8501"
+    environment:
+      - PORT=8501
+      - APP_ENV=production
+      - DEMO_NOVABANK_PASSWORD=NovaBank2026!
+      - DEMO_FINEDGE_PASSWORD=FinEdge2026!
+      - DEMO_HEALTHCARE_PASSWORD=Health2026!
+      - DEMO_SMARTHIRE_PASSWORD=SmartHire2026!
+      - DEMO_RETAILX_PASSWORD=RetailX2026!
+    volumes:
+      - control-plane-data:/app/storage
+    networks:
+      - cloud-network
+
+  # =========================================================================
+  # 2. CUSTOMER A: NOVABANK PRIVATE ENCLAVE (CUSTOMER SECURITY BOUNDARY)
+  # =========================================================================
+  agent-novabank:
+    build:
+      context: .
+      dockerfile: Dockerfile.agent
+    environment:
+      - AGENT_ID=AGENT-ORG-0005
+      - ORGANIZATION_ID=5
+      - AGENT_SECRET=novabank_vault_secret_2026
+      - DATABASE_TYPE=sqlite
+      - DATABASE_HOST=127.0.0.1
+      - DATABASE_NAME=novabank_private
+      - DATABASE_USER=datadelulu_reader
+    networks:
+      - cloud-network
+      - novabank-private-vpc
+    depends_on:
+      - control-plane
+
+  # =========================================================================
+  # 3. CUSTOMER B: FINEDGE LENDING PRIVATE ENCLAVE (CUSTOMER SECURITY BOUNDARY)
+  # =========================================================================
+  agent-finedge:
+    build:
+      context: .
+      dockerfile: Dockerfile.agent
+    environment:
+      - AGENT_ID=AGENT-ORG-0002
+      - ORGANIZATION_ID=2
+      - AGENT_SECRET=finedge_vault_secret_2026
+      - DATABASE_TYPE=sqlite
+      - DATABASE_HOST=127.0.0.1
+      - DATABASE_NAME=finedge_lending
+      - DATABASE_USER=datadelulu_reader
+    networks:
+      - cloud-network
+      - finedge-private-vpc
+    depends_on:
+      - control-plane
+
+networks:
+  cloud-network:
+    driver: bridge
+  novabank-private-vpc:
+    internal: true
+  finedge-private-vpc:
+    internal: true
+
+volumes:
+  control-plane-data:

@@ -1,0 +1,26 @@
+# Data Delulu Customer Data Plane Agent Dockerfile
+FROM python:3.11-slim
+
+WORKDIR /agent
+
+# Install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy Agent and engine modules
+COPY data_delulu_agent/ ./data_delulu_agent/
+COPY src/ ./src/
+COPY data/ ./data/
+
+# Environment variables for customer-controlled configuration
+ENV AGENT_ID="AGENT-ORG-0001"
+ENV ORGANIZATION_ID="1"
+ENV AGENT_SECRET="customer_enclave_secret"
+ENV DATABASE_TYPE="sqlite"
+ENV DATABASE_HOST="127.0.0.1"
+ENV DATABASE_PORT="5432"
+ENV DATABASE_USER="datadelulu_reader"
+ENV PYTHONUNBUFFERED=1
+
+ENTRYPOINT ["python", "-m", "data_delulu_agent.agent"]
+CMD ["--help"]
